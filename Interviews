@@ -1,0 +1,34 @@
+/*
+Enter your query here.
+Please append a semicolon ";" at the end of the query and enter your query in a single line to avoid error.
+*/
+;with cte as
+(
+    select challenge_id, sum(total_views) as sum_views, sum(total_unique_views) as sum_uq_views
+    from view_stats
+    group by challenge_id
+)
+,cte2 as
+(
+    select challenge_id, sum(total_submissions) as sum_submissions, sum(total_accepted_submissions) as sum_acc_submissions
+    from submission_stats
+    group by challenge_id   
+)
+,cte4 as
+(
+select cont.contest_id, cont.hacker_id, cont.name, sum(isnull(c2.sum_submissions,0)) sum_submissions, 
+sum(isnull(c2.sum_acc_submissions,0)) as sum_accepted_submissions, sum(isnull(c.sum_views,0)) as sum_views, sum(isnull(c.sum_uq_views,0)) as sum_unique_views   
+from contests cont
+inner join colleges coll
+on cont.contest_id = coll.contest_id
+left join challenges cha
+on coll.college_id = cha.college_id
+left join cte2 c2 
+on c2.challenge_id = cha.challenge_id
+left join cte c 
+on c.challenge_id = cha.challenge_id
+group by cont.contest_id, cont.hacker_id, cont.name
+)
+select contest_id, hacker_id, name, sum_submissions, sum_accepted_submissions, sum_views,  sum_unique_views from cte4
+where not (sum_submissions=0 and sum_accepted_submissions=0 and sum_views=0 and sum_unique_views=0)
+order by contest_id
